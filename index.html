@@ -168,10 +168,18 @@
     </div>
 
     <script>
-        let GROQ_KEY = localStorage.getItem('groq_api_key') || '';
-        const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-        const MODEL = 'llama-3.1-8b-instant';
+        // ==========================================
+        // CONFIG - PASTE YOUR GROQ API KEY HERE
+        // ==========================================
+        const CONFIG = {
+            GROQ_API_KEY: 'gsk_aBc123XyZ789YourActualKeyHere', // <-- REPLACE THIS WITH YOUR REAL KEY
+            GROQ_URL: 'https://api.groq.com/openai/v1/chat/completions',
+            MODEL: 'llama-3.1-8b-instant'
+        };
 
+        // ==========================================
+        // LESSONS
+        // ==========================================
         const LESSONS = [
             {
                 id: 'introduce', title: 'Introducing Yourself', icon: '👋', difficulty: 'Easy',
@@ -268,14 +276,27 @@
         let recognition = null;
         let bestVoice = null;
 
+        // ==========================================
+        // INIT
+        // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
-            if (GROQ_KEY && GROQ_KEY.startsWith('gsk_')) {
+            // Check if API key is set
+            const savedKey = localStorage.getItem('groq_api_key');
+            if (savedKey && savedKey.startsWith('gsk_')) {
+                CONFIG.GROQ_API_KEY = savedKey;
+                showScreen('home-screen');
+                renderLessons();
+                updateStats();
+            } else if (CONFIG.GROQ_API_KEY !== 'YOUR_GROQ_KEY_HERE' && CONFIG.GROQ_API_KEY.startsWith('gsk_')) {
+                // Hardcoded key is set
+                localStorage.setItem('groq_api_key', CONFIG.GROQ_API_KEY);
                 showScreen('home-screen');
                 renderLessons();
                 updateStats();
             } else {
                 showScreen('api-key-screen');
             }
+            
             speechSynthesis.getVoices();
             if (speechSynthesis.onvoiceschanged !== undefined) {
                 speechSynthesis.onvoiceschanged = setupVoice;
@@ -300,7 +321,7 @@
                 alert('Please enter a valid Groq API key. It should start with "gsk_"');
                 return;
             }
-            GROQ_KEY = key;
+            CONFIG.GROQ_API_KEY = key;
             localStorage.setItem('groq_api_key', key);
             showScreen('home-screen');
             renderLessons();
@@ -454,94 +475,87 @@
             showFeedback(feedback, text);
         }
 
+        // ==========================================
+        // GROQ API - BULLETPROOF VERSION
+        // ==========================================
         async function analyzeWithGroq(userText, targetPhrase) {
-    const messages = [
-        {
-            role: "system",
-            content: "You are an English speaking coach. You MUST respond with valid JSON only. No markdown, no extra text, no explanations outside the JSON."
-        },
-        {
-            role: "user",
-            content: `Analyze this spoken English practice.
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are an English speaking coach. You MUST respond with valid JSON only. No markdown, no extra text, no explanations outside the JSON."
+                },
+                {
+                    role: "user",
+                    content: `Analyze this spoken English practice.
 
 TARGET PHRASE: "${targetPhrase}"
 LEARNER SAID: "${userText}"
 
 Respond with ONLY this JSON structure:
-{
-  "score": 75,
-  "pronunciation_issues": [],
-  "grammar_mistakes": [],
-  "encouragement": "Great job!",
-  "specific_tip": "Speak slower",
-  "try_again": false
-}
+{"score": 75, "pronunciation_issues": [], "grammar_mistakes": [], "encouragement": "Great job!", "specific_tip": "Speak slower", "try_again": false}
 
 Score guide:
 - 80-100: Good, minor issues only
 - 60-79: Some mistakes but understandable  
 - 0-59: Major mistakes, needs more practice
 try_again = true if score < 75`
-        }
-    ];
+                }
+            ];
 
-    try {
-        const res = await fetch(GROQ_URL, {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + GROQ_KEY,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: MODEL,
-                messages: messages,
-                temperature: 0.1,
-                max_tokens: 400,
-                response_format: { type: "json_object" }
-            })
-        });
-        
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error?.message || 'API error ' + res.status);
+            try {
+                const res = await fetch(CONFIG.GROQ_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + CONFIG.GROQ_API_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: CONFIG.MODEL,
+                        messages: messages,
+                        temperature: 0.1,
+                        max_tokens: 400,
+                        response_format: { type: "json_object" }
+                    })
+                });
+                
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error?.message || 'API error ' + res.status);
+                }
+                
+                const data = await res.json();
+                const content = data.choices[0].message.content;
+                
+                let feedback;
+                try {
+                    feedback = JSON.parse(content);
+                } catch (parseErr) {
+                    const cleaned = content.replace(/```json/g, '').replace(/```/g, '').trim();
+                    feedback = JSON.parse(cleaned);
+                }
+                
+                return {
+                    score: typeof feedback.score === 'number' ? Math.max(0, Math.min(100, feedback.score)) : 50,
+                    pronunciation_issues: Array.isArray(feedback.pronunciation_issues) ? feedback.pronunciation_issues : [],
+                    grammar_mistakes: Array.isArray(feedback.grammar_mistakes) ? feedback.grammar_mistakes : [],
+                    encouragement: feedback.encouragement || "Good effort! Keep practicing.",
+                    specific_tip: feedback.specific_tip || "Focus on speaking slowly and clearly.",
+                    try_again: feedback.try_again === true || (typeof feedback.score === 'number' && feedback.score < 75)
+                };
+                
+            } catch (err) {
+                console.error('Groq error:', err);
+                return {
+                    score: 50,
+                    pronunciation_issues: [],
+                    grammar_mistakes: [],
+                    encouragement: "Let's try again! The AI had a small hiccup.",
+                    specific_tip: "Speak clearly and try once more.",
+                    try_again: true
+                };
+            }
         }
-        
-        const data = await res.json();
-        const content = data.choices[0].message.content;
-        
-        // Parse the JSON response
-        let feedback;
-        try {
-            feedback = JSON.parse(content);
-        } catch (parseErr) {
-            // If direct parse fails, try cleaning it
-            const cleaned = content.replace(/```json/g, '').replace(/```/g, '').trim();
-            feedback = JSON.parse(cleaned);
-        }
-        
-        // Validate and set defaults for missing fields
-        return {
-            score: typeof feedback.score === 'number' ? Math.max(0, Math.min(100, feedback.score)) : 50,
-            pronunciation_issues: Array.isArray(feedback.pronunciation_issues) ? feedback.pronunciation_issues : [],
-            grammar_mistakes: Array.isArray(feedback.grammar_mistakes) ? feedback.grammar_mistakes : [],
-            encouragement: feedback.encouragement || "Good effort! Keep practicing.",
-            specific_tip: feedback.specific_tip || "Focus on speaking slowly and clearly.",
-            try_again: feedback.try_again === true || (typeof feedback.score === 'number' && feedback.score < 75)
-        };
-        
-    } catch (err) {
-        console.error('Groq error:', err);
-        // Always return valid feedback, never crash
-        return {
-            score: 50,
-            pronunciation_issues: [],
-            grammar_mistakes: [],
-            encouragement: "Let's try again! The AI had a small hiccup.",
-            specific_tip: "Speak clearly and try once more.",
-            try_again: true
-        };
-    }
-}
+
         function showFeedback(feedback, userText) {
             document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
             document.getElementById('step-feedback').classList.add('active');
