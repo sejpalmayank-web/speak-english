@@ -455,23 +455,35 @@
         }
 
         async function analyzeWithGroq(userText, targetPhrase) {
-    const prompt = `You are an expert English speaking coach. A learner is practicing workplace English.
+    const messages = [
+        {
+            role: "system",
+            content: "You are an English speaking coach. You MUST respond with valid JSON only. No markdown, no extra text, no explanations outside the JSON."
+        },
+        {
+            role: "user",
+            content: `Analyze this spoken English practice.
 
-TARGET PHRASE TO PRACTICE: "${targetPhrase}"
+TARGET PHRASE: "${targetPhrase}"
+LEARNER SAID: "${userText}"
 
-WHAT THE LEARNER SAID: "${userText}"
+Respond with ONLY this JSON structure:
+{
+  "score": 75,
+  "pronunciation_issues": [],
+  "grammar_mistakes": [],
+  "encouragement": "Great job!",
+  "specific_tip": "Speak slower",
+  "try_again": false
+}
 
-Analyze their speech and return ONLY valid JSON in this exact format (no markdown, no extra text):
-{"score": number from 0 to 100, "pronunciation_issues": [], "grammar_mistakes": [], "encouragement": "string", "specific_tip": "string", "try_again": true or false}
-
-Rules for score:
-- 80-100: Good attempt, minor issues
-- 60-79: Some mistakes but understandable
-- 0-59: Major mistakes, needs practice
-
-Set try_again to true if score is less than 75.
-
-Be strict but encouraging. Focus on workplace English.`;
+Score guide:
+- 80-100: Good, minor issues only
+- 60-79: Some mistakes but understandable  
+- 0-59: Major mistakes, needs more practice
+try_again = true if score < 75`
+        }
+    ];
 
     try {
         const res = await fetch(GROQ_URL, {
@@ -482,56 +494,49 @@ Be strict but encouraging. Focus on workplace English.`;
             },
             body: JSON.stringify({
                 model: MODEL,
-                messages: [{role: 'user', content: prompt}],
-                temperature: 0.2,
-                max_tokens: 300
+                messages: messages,
+                temperature: 0.1,
+                max_tokens: 400,
+                response_format: { type: "json_object" }
             })
         });
         
         if (!res.ok) {
             const err = await res.json();
-            throw new Error(err.error?.message || 'API error');
+            throw new Error(err.error?.message || 'API error ' + res.status);
         }
         
         const data = await res.json();
-        let content = data.choices[0].message.content.trim();
+        const content = data.choices[0].message.content;
         
-        // Remove markdown code blocks if present
-        content = content.replace(/```json/g, '').replace(/```/g, '').trim();
-        
-        // Find JSON object in the response
-        const jsonStart = content.indexOf('{');
-        const jsonEnd = content.lastIndexOf('}');
-        
-        if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
-            throw new Error('No JSON found in response');
+        // Parse the JSON response
+        let feedback;
+        try {
+            feedback = JSON.parse(content);
+        } catch (parseErr) {
+            // If direct parse fails, try cleaning it
+            const cleaned = content.replace(/```json/g, '').replace(/```/g, '').trim();
+            feedback = JSON.parse(cleaned);
         }
         
-        const jsonStr = content.substring(jsonStart, jsonEnd + 1);
-        const feedback = JSON.parse(jsonStr);
-        
-        // Ensure all required fields exist
+        // Validate and set defaults for missing fields
         return {
-            score: typeof feedback.score === 'number' ? feedback.score : 50,
+            score: typeof feedback.score === 'number' ? Math.max(0, Math.min(100, feedback.score)) : 50,
             pronunciation_issues: Array.isArray(feedback.pronunciation_issues) ? feedback.pronunciation_issues : [],
             grammar_mistakes: Array.isArray(feedback.grammar_mistakes) ? feedback.grammar_mistakes : [],
             encouragement: feedback.encouragement || "Good effort! Keep practicing.",
             specific_tip: feedback.specific_tip || "Focus on speaking slowly and clearly.",
-            try_again: feedback.try_again === true
+            try_again: feedback.try_again === true || (typeof feedback.score === 'number' && feedback.score < 75)
         };
         
     } catch (err) {
-        console.error('Analysis error:', err);
-        // Return a safe fallback so the app doesn't crash
+        console.error('Groq error:', err);
+        // Always return valid feedback, never crash
         return {
             score: 50,
             pronunciation_issues: [],
-            grammar_mistakes: [{
-                wrong: "Could not analyze",
-                right: "Please try again",
-                why: "Connection issue: " + err.message
-            }],
-            encouragement: "Let's try again! The connection had a hiccup.",
+            grammar_mistakes: [],
+            encouragement: "Let's try again! The AI had a small hiccup.",
             specific_tip: "Speak clearly and try once more.",
             try_again: true
         };
