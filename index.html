@@ -170,7 +170,7 @@
     <script>
         let GROQ_KEY = localStorage.getItem('groq_api_key') || '';
         const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-        const MODEL = 'llama-3.3-70b-versatile';
+        const MODEL = 'llama-3.1-8b-instant';
 
         const LESSONS = [
             {
@@ -455,64 +455,88 @@
         }
 
         async function analyzeWithGroq(userText, targetPhrase) {
-            const prompt = `You are an expert English speaking coach. A learner is practicing workplace English.
+    const prompt = `You are an expert English speaking coach. A learner is practicing workplace English.
 
 TARGET PHRASE TO PRACTICE: "${targetPhrase}"
 
 WHAT THE LEARNER SAID: "${userText}"
 
-Analyze their speech and return ONLY this JSON:
-{
-    "score": number from 0-100,
-    "pronunciation_issues": ["words they mispronounced or skipped"],
-    "grammar_mistakes": [{"wrong": "what they said", "right": "correct version", "why": "brief explanation"}],
-    "encouragement": "one encouraging sentence",
-    "specific_tip": "one specific tip to improve this phrase",
-    "try_again": true or false (true if score < 75)
-}
+Analyze their speech and return ONLY valid JSON in this exact format (no markdown, no extra text):
+{"score": number from 0 to 100, "pronunciation_issues": [], "grammar_mistakes": [], "encouragement": "string", "specific_tip": "string", "try_again": true or false}
+
+Rules for score:
+- 80-100: Good attempt, minor issues
+- 60-79: Some mistakes but understandable
+- 0-59: Major mistakes, needs practice
+
+Set try_again to true if score is less than 75.
 
 Be strict but encouraging. Focus on workplace English.`;
 
-            try {
-                const res = await fetch(GROQ_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + GROQ_KEY,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: MODEL,
-                        messages: [{role: 'user', content: prompt}],
-                        temperature: 0.3,
-                        max_tokens: 400
-                    })
-                });
-                
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.error?.message || 'API error');
-                }
-                
-                const data = await res.json();
-                const content = data.choices[0].message.content;
-                const jsonMatch = content.match(/\{[\s\S]*\}/);
-                if (jsonMatch) return JSON.parse(jsonMatch[0]);
-                throw new Error('Invalid response');
-                
-            } catch (err) {
-                return {
-                    error: true,
-                    message: err.message,
-                    score: 50,
-                    pronunciation_issues: [],
-                    grammar_mistakes: [],
-                    encouragement: "Connection issue. Please check your API key!",
-                    specific_tip: "Make sure your Groq API key is correct and active.",
-                    try_again: true
-                };
-            }
+    try {
+        const res = await fetch(GROQ_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + GROQ_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: MODEL,
+                messages: [{role: 'user', content: prompt}],
+                temperature: 0.2,
+                max_tokens: 300
+            })
+        });
+        
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error?.message || 'API error');
         }
-
+        
+        const data = await res.json();
+        let content = data.choices[0].message.content.trim();
+        
+        // Remove markdown code blocks if present
+        content = content.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        // Find JSON object in the response
+        const jsonStart = content.indexOf('{');
+        const jsonEnd = content.lastIndexOf('}');
+        
+        if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+            throw new Error('No JSON found in response');
+        }
+        
+        const jsonStr = content.substring(jsonStart, jsonEnd + 1);
+        const feedback = JSON.parse(jsonStr);
+        
+        // Ensure all required fields exist
+        return {
+            score: typeof feedback.score === 'number' ? feedback.score : 50,
+            pronunciation_issues: Array.isArray(feedback.pronunciation_issues) ? feedback.pronunciation_issues : [],
+            grammar_mistakes: Array.isArray(feedback.grammar_mistakes) ? feedback.grammar_mistakes : [],
+            encouragement: feedback.encouragement || "Good effort! Keep practicing.",
+            specific_tip: feedback.specific_tip || "Focus on speaking slowly and clearly.",
+            try_again: feedback.try_again === true
+        };
+        
+    } catch (err) {
+        console.error('Analysis error:', err);
+        // Return a safe fallback so the app doesn't crash
+        return {
+            score: 50,
+            pronunciation_issues: [],
+            grammar_mistakes: [{
+                wrong: "Could not analyze",
+                right: "Please try again",
+                why: "Connection issue: " + err.message
+            }],
+            encouragement: "Let's try again! The connection had a hiccup.",
+            specific_tip: "Speak clearly and try once more.",
+            try_again: true
+        };
+    }
+}
         function showFeedback(feedback, userText) {
             document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
             document.getElementById('step-feedback').classList.add('active');
