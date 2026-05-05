@@ -3,7 +3,7 @@
 // ==========================================
 
 const CONFIG = {
-    GROQ_API_KEY: 'YOUR_GROQ_KEY_HERE', // We'll fix this first
+    GROQ_API_KEY: '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', // We'll fix this first
     GROQ_URL: 'https://api.groq.com/openai/v1/chat/completions',
     MODEL: 'llama3-8b-8192'
 };
