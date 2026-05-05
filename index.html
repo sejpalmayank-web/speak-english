@@ -3,328 +3,1306 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#0a0a0a">
     <title>FluencyCoach - AI English Speaking Coach</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        :root { --primary: #6366f1; --primary-light: #818cf8; --success: #22c55e; --warning: #f59e0b; --danger: #ef4444; --info: #3b82f6; --bg: #0f172a; --surface: #1e293b; --surface-light: #334155; --text: #f1f5f9; --text-muted: #94a3b8; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
-        .screen { display: none; min-height: 100vh; padding: 16px; padding-bottom: 120px; }
-        .screen.active { display: block; animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Sarah Avatar */
-        .sarah-container { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-        .sarah-avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
-        .sarah-info { flex: 1; }
-        .sarah-name { font-size: 18px; font-weight: bold; }
-        .sarah-status { font-size: 13px; color: var(--success); display: flex; align-items: center; gap: 4px; }
-        .sarah-status::before { content: ''; width: 8px; height: 8px; background: var(--success); border-radius: 50%; display: inline-block; }
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --surface-light: #1e1e1e;
+            --surface-hover: #252525;
+            --border: #2a2a2a;
+            --text: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666666;
+            --accent: #7c3aed;
+            --accent-light: #8b5cf6;
+            --accent-glow: rgba(124, 58, 237, 0.3);
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+        }
         
-        /* Home Screen */
-        .app-header { text-align: center; padding: 20px 0 16px; }
-        .app-header h1 { font-size: 26px; background: linear-gradient(135deg, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .app-header p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
         
-        .stats-row { display: flex; gap: 12px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 4px; }
-        .stat-card { background: var(--surface); border-radius: 16px; padding: 16px; min-width: 100px; text-align: center; border: 1px solid var(--surface-light); }
-        .stat-card .number { font-size: 28px; font-weight: bold; color: var(--primary); }
-        .stat-card .label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        .screen {
+            display: none;
+            min-height: 100vh;
+            animation: fadeIn 0.3s ease;
+        }
         
-        .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .mode-card { background: var(--surface); border-radius: 20px; padding: 20px; cursor: pointer; transition: all 0.3s; border: 2px solid transparent; text-align: center; }
-        .mode-card:hover { border-color: var(--primary); transform: translateY(-2px); }
-        .mode-card .icon { font-size: 36px; margin-bottom: 10px; }
-        .mode-card h3 { font-size: 15px; margin-bottom: 6px; }
-        .mode-card p { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+        .screen.active {
+            display: block;
+        }
         
-        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-        .section-header h2 { font-size: 18px; }
-        .see-all { color: var(--primary-light); font-size: 14px; cursor: pointer; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         
-        .topic-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; }
-        .topic-chip { background: var(--surface); border: 1px solid var(--surface-light); border-radius: 20px; padding: 8px 16px; font-size: 14px; white-space: nowrap; cursor: pointer; transition: all 0.2s; }
-        .topic-chip:hover, .topic-chip.active { background: var(--primary); border-color: var(--primary); }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         
-        /* Practice Screen */
-        .practice-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-top: 8px; }
-        .btn-back { background: var(--surface); border: none; color: var(--text); width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; }
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
         
-        .timer-bar { height: 4px; background: var(--surface); border-radius: 2px; margin-bottom: 20px; overflow: hidden; }
-        .timer-fill { height: 100%; background: linear-gradient(90deg, var(--success), var(--warning), var(--danger)); border-radius: 2px; transition: width 1s linear; width: 100%; }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
         
-        .topic-display { background: linear-gradient(135deg, var(--primary), var(--primary-light)); border-radius: 20px; padding: 24px; margin-bottom: 20px; text-align: center; }
-        .topic-display h2 { font-size: 22px; margin-bottom: 8px; }
-        .topic-display p { font-size: 14px; opacity: 0.9; }
+        /* ===== HOME SCREEN ===== */
+        .home-container {
+            padding: 0 20px 100px;
+        }
         
-        .prompt-box { background: var(--surface); border-radius: 16px; padding: 20px; margin-bottom: 20px; border-left: 4px solid var(--primary); }
-        .prompt-box h4 { color: var(--primary-light); font-size: 13px; margin-bottom: 8px; text-transform: uppercase; }
-        .prompt-box p { font-size: 16px; line-height: 1.6; }
+        .home-header {
+            padding: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
         
-        .sample-answer { background: rgba(99,102,241,0.1); border-radius: 16px; padding: 16px; margin-bottom: 20px; display: none; }
-        .sample-answer.show { display: block; animation: fadeIn 0.3s ease; }
-        .sample-answer h4 { color: var(--primary-light); font-size: 13px; margin-bottom: 8px; }
-        .sample-answer p { font-size: 15px; line-height: 1.5; font-style: italic; }
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
         
-        /* Recording UI */
-        .recording-container { text-align: center; padding: 30px 0; }
-        .record-btn { width: 100px; height: 100px; border-radius: 50%; border: none; background: var(--danger); color: white; font-size: 40px; cursor: pointer; transition: all 0.3s; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(239,68,68,0.4); }
-        .record-btn:active { transform: scale(0.95); }
-        .record-btn.recording { animation: pulse 1.5s infinite; }
-        .recording-time { font-size: 32px; font-weight: bold; color: var(--danger); margin-bottom: 8px; }
-        .recording-status { color: var(--text-muted); font-size: 14px; }
+        .streak-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--surface);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+        }
         
-        .transcript-box { background: var(--surface); border-radius: 16px; padding: 20px; margin: 20px 0; min-height: 80px; }
-        .transcript-box .label { color: var(--text-muted); font-size: 12px; margin-bottom: 8px; text-transform: uppercase; }
-        .transcript-box .text { font-size: 16px; line-height: 1.6; }
+        .streak-badge .fire {
+            font-size: 18px;
+        }
         
-        /* Feedback Screen */
-        .score-display { text-align: center; padding: 30px 0; }
-        .main-score { font-size: 72px; font-weight: bold; background: linear-gradient(135deg, var(--success), var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .score-label { font-size: 16px; color: var(--text-muted); margin-top: 8px; }
-        .band-score { display: inline-block; background: var(--surface); padding: 8px 20px; border-radius: 20px; margin-top: 12px; font-size: 14px; }
+        /* Sarah Card */
+        .sarah-card {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(124, 58, 237, 0.2);
+        }
         
-        .dimensions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .dimension-card { background: var(--surface); border-radius: 16px; padding: 16px; text-align: center; }
-        .dimension-card .dim-icon { font-size: 24px; margin-bottom: 8px; }
-        .dimension-card .dim-score { font-size: 24px; font-weight: bold; color: var(--primary); }
-        .dimension-card .dim-name { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        .sarah-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+        }
         
-        .feedback-details { background: var(--surface); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        .feedback-details h3 { font-size: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-        .issue-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: rgba(239,68,68,0.05); border-radius: 12px; margin-bottom: 10px; border-left: 3px solid var(--danger); }
-        .issue-item .issue-icon { font-size: 20px; flex-shrink: 0; }
-        .issue-item .issue-text { font-size: 14px; line-height: 1.5; }
-        .issue-item .issue-text .wrong { color: var(--danger); text-decoration: line-through; }
-        .issue-item .issue-text .right { color: var(--success); font-weight: bold; }
+        .sarah-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+            z-index: 1;
+        }
         
-        .tip-card { background: rgba(99,102,241,0.1); border-left: 4px solid var(--primary); padding: 16px; border-radius: 12px; margin-bottom: 16px; }
-        .tip-card h4 { color: var(--primary-light); font-size: 13px; margin-bottom: 6px; }
-        .tip-card p { font-size: 14px; line-height: 1.5; }
+        .sarah-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            border: 3px solid rgba(255,255,255,0.1);
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+        }
+        
+        .sarah-info h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .sarah-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #a78bfa;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #22c55e;
+            animation: pulse-dot 2s infinite;
+        }
+        
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .sarah-message {
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+        
+        /* Quick Start Button */
+        .btn-main {
+            width: 100%;
+            padding: 18px;
+            border-radius: 16px;
+            border: none;
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: white;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(124, 58, 237, 0.4);
+        }
+        
+        .btn-main:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            width: 100%;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent);
+        }
+        
+        /* Mode Cards */
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 32px 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .section-title a {
+            font-size: 14px;
+            color: var(--accent-light);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .modes-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .mode-item {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .mode-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .mode-item::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .mode-item:hover::after {
+            opacity: 1;
+        }
+        
+        .mode-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(139,92,246,0.1));
+        }
+        
+        .mode-item h3 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        
+        .mode-item p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        
+        /* Topic Chips */
+        .topics-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .topics-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .topic-pill {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-secondary);
+        }
+        
+        .topic-pill:hover, .topic-pill.active {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+        }
+        
+        /* Stats Row */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        .stat-box {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 16px 8px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        
+        .stat-box .value {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stat-box .label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* ===== PRACTICE SCREEN ===== */
+        .practice-container {
+            padding: 0 20px 40px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .nav-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 0;
+        }
+        
+        .nav-back {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+        
+        .nav-back:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent);
+        }
+        
+        .nav-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        
+        /* Timer */
+        .timer-section {
+            margin-bottom: 24px;
+        }
+        
+        .timer-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        
+        .timer-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(var(--accent) 360deg, var(--surface) 0deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: background 1s linear;
+        }
+        
+        .timer-circle::before {
+            content: '';
+            position: absolute;
+            width: 104px;
+            height: 104px;
+            border-radius: 50%;
+            background: var(--bg);
+        }
+        
+        .timer-text {
+            position: relative;
+            z-index: 1;
+            font-size: 36px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .timer-label {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        /* Topic Card */
+        .topic-card {
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            border-radius: 24px;
+            padding: 28px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .topic-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.2) 0%, transparent 70%);
+        }
+        
+        .topic-card h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        
+        .topic-card p {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #c4b5fd;
+            position: relative;
+        }
+        
+        /* Tip Card */
+        .tip-card {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+        
+        .tip-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(139,92,246,0.1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .tip-content h4 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--accent-light);
+        }
+        
+        .tip-content p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+        
+        /* Recording Section */
+        .recording-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 0;
+        }
+        
+        .mic-button {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            border: none;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .mic-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 30px rgba(124, 58, 237, 0.5);
+        }
+        
+        .mic-button.recording {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            animation: mic-pulse 1.5s infinite;
+        }
+        
+        @keyframes mic-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+        }
+        
+        .mic-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            animation: pulse-ring 2s infinite;
+            opacity: 0;
+        }
+        
+        .mic-button.recording .mic-ring {
+            opacity: 1;
+        }
+        
+        .recording-status {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .recording-status .status-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        .recording-status .status-sub {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+        
+        /* Transcript */
+        .transcript-card {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid var(--border);
+            display: none;
+        }
+        
+        .transcript-card.show {
+            display: block;
+            animation: slideUp 0.4s ease;
+        }
+        
+        .transcript-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+        
+        .transcript-text {
+            font-size: 16px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+        
+        /* ===== FEEDBACK SCREEN ===== */
+        .feedback-container {
+            padding: 0 20px 40px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .score-hero {
+            text-align: center;
+            padding: 30px 0;
+        }
+        
+        .score-circle-big {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: conic-gradient(var(--accent) var(--score-deg), var(--surface) var(--score-deg));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+        
+        .score-circle-big::before {
+            content: '';
+            position: absolute;
+            width: 136px;
+            height: 136px;
+            border-radius: 50%;
+            background: var(--bg);
+        }
+        
+        .score-inner {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .score-number {
+            font-size: 56px;
+            font-weight: 800;
+            line-height: 1;
+        }
+        
+        .score-total {
+            font-size: 18px;
+            color: var(--text-muted);
+        }
+        
+        .score-label {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+        
+        .band-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(139,92,246,0.1));
+            border: 1px solid rgba(124,58,237,0.3);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-light);
+            margin-top: 16px;
+        }
+        
+        /* Dimension Scores */
+        .dimensions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .dim-row {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+        
+        .dim-row:hover {
+            border-color: var(--accent);
+            background: var(--surface-hover);
+        }
+        
+        .dim-icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(139,92,246,0.05));
+        }
+        
+        .dim-info {
+            flex: 1;
+        }
+        
+        .dim-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .dim-bar-bg {
+            height: 6px;
+            background: var(--surface-light);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .dim-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1s ease;
+        }
+        
+        .dim-score-val {
+            font-size: 18px;
+            font-weight: 700;
+            min-width: 36px;
+            text-align: right;
+        }
+        
+        /* Issues Section */
+        .issues-section {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .issues-section h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .issue-item {
+            padding: 16px;
+            background: rgba(239, 68, 68, 0.05);
+            border-radius: 14px;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--danger);
+        }
+        
+        .issue-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .issue-bad {
+            color: var(--danger);
+            text-decoration: line-through;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .issue-good {
+            color: var(--success);
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+        
+        .issue-why {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        
+        /* Sarah's Tip */
+        .sarah-tip-box {
+            background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(139,92,246,0.05));
+            border: 1px solid rgba(124,58,237,0.2);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        
+        .sarah-tip-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        
+        .sarah-tip-content h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent-light);
+            margin-bottom: 8px;
+        }
+        
+        .sarah-tip-content p {
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
         
         /* Progress Screen */
-        .progress-chart { background: var(--surface); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        .chart-bar { display: flex; align-items: flex-end; gap: 8px; height: 150px; margin-top: 20px; }
-        .chart-column { flex: 1; background: var(--primary); border-radius: 8px 8px 0 0; min-height: 20px; transition: height 0.5s; position: relative; }
-        .chart-column .day-label { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--text-muted); }
+        .chart-container {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
         
-        .weakness-list { background: var(--surface); border-radius: 20px; padding: 20px; }
-        .weakness-list h3 { font-size: 16px; margin-bottom: 16px; }
-        .weakness-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--surface-light); }
-        .weakness-item:last-child { border-bottom: none; }
-        .weakness-bar { flex: 1; height: 8px; background: var(--surface-light); border-radius: 4px; overflow: hidden; }
-        .weakness-bar .fill { height: 100%; border-radius: 4px; }
-        .weakness-bar .fill.danger { background: var(--danger); }
-        .weakness-bar .fill.warning { background: var(--warning); }
-        .weakness-bar .fill.success { background: var(--success); }
+        .chart-container h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
         
-        /* Common */
-        .btn-primary { width: 100%; padding: 18px; border-radius: 50px; border: none; background: var(--success); color: white; font-size: 17px; font-weight: bold; cursor: pointer; transition: all 0.3s; margin-bottom: 12px; }
-        .btn-primary:active { transform: scale(0.97); }
-        .btn-secondary { width: 100%; padding: 16px; border-radius: 50px; border: 2px solid var(--surface-light); background: transparent; color: var(--text); font-size: 16px; cursor: pointer; }
-        .btn-secondary:active { background: var(--surface); }
+        .chart-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            height: 160px;
+            padding-bottom: 24px;
+        }
         
-        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow: 0 0 0 15px rgba(239,68,68,0); } }
-        @media (min-width: 768px) { body { max-width: 480px; margin: 0 auto; border-left: 1px solid var(--surface-light); border-right: 1px solid var(--surface-light); } }
+        .chart-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .chart-bar {
+            width: 100%;
+            background: linear-gradient(180deg, var(--accent-light), var(--accent));
+            border-radius: 8px 8px 0 0;
+            min-height: 4px;
+            transition: height 0.5s ease;
+            position: relative;
+        }
+        
+        .chart-bar::after {
+            content: attr(data-score);
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent-light);
+        }
+        
+        .chart-day {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        
+        /* API Key Screen */
+        .auth-screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+            text-align: center;
+        }
+        
+        .auth-logo {
+            font-size: 48px;
+            margin-bottom: 24px;
+        }
+        
+        .auth-screen h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .auth-screen p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+            max-width: 320px;
+        }
+        
+        .auth-input {
+            width: 100%;
+            max-width: 360px;
+            padding: 16px 20px;
+            border-radius: 16px;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 16px;
+            margin-bottom: 16px;
+            transition: all 0.3s;
+        }
+        
+        .auth-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+        }
+        
+        .auth-note {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+        
+        .auth-note a {
+            color: var(--accent-light);
+            text-decoration: none;
+        }
+        
+        @media (min-width: 768px) {
+            body {
+                max-width: 500px;
+                margin: 0 auto;
+                border-left: 1px solid var(--border);
+                border-right: 1px solid var(--border);
+            }
+        }
     </style>
 </head>
 <body>
 
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="screen active">
+        <div class="auth-screen">
+            <div class="auth-logo">🎯</div>
+            <h1>FluencyCoach</h1>
+            <p>Your AI speaking coach Sarah is ready to help you speak English confidently</p>
+            <input type="text" id="api-key-input" class="auth-input" placeholder="Paste your Groq API key (gsk_...)">
+            <button class="btn-main" onclick="saveApiKey()">Start Learning →</button>
+            <p class="auth-note">
+                Don't have a key? <a href="https://console.groq.com/keys" target="_blank">Get one free</a><br>
+                Your key stays on your device only
+            </p>
+        </div>
+    </div>
+
     <!-- HOME SCREEN -->
-    <div id="home-screen" class="screen active">
-        <div class="app-header">
-            <h1>🎯 FluencyCoach</h1>
-            <p>Your AI Speaking Coach Sarah is ready</p>
+    <div id="home-screen" class="screen">
+        <div class="home-container">
+            <div class="home-header">
+                <div class="logo">FluencyCoach</div>
+                <div class="streak-badge">
+                    <span class="fire">🔥</span>
+                    <span id="streak-count">0</span>
+                </div>
+            </div>
+            
+            <div class="sarah-card">
+                <div class="sarah-content">
+                    <div class="sarah-avatar">👩‍🏫</div>
+                    <div class="sarah-info">
+                        <h2>Hi, I'm Sarah</h2>
+                        <div class="sarah-status">
+                            <span class="status-dot"></span>
+                            <span>Ready to practice</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="sarah-message">
+                    Ready to practice? Choose a mode below or try a quick 5-minute session. I'll give you detailed feedback on pronunciation, fluency, grammar, and more!
+                </div>
+            </div>
+            
+            <button class="btn-main" onclick="quickStart()">
+                <span>⚡</span>
+                <span>Quick Start - 5 Min Practice</span>
+            </button>
+            
+            <div class="section-title">
+                Practice Modes
+                <a href="#" onclick="showAllModes()">See all</a>
+            </div>
+            
+            <div class="modes-grid">
+                <div class="mode-item" onclick="startMode('impromptu')">
+                    <div class="mode-icon">⚡</div>
+                    <h3>Impromptu</h3>
+                    <p>60-second challenges on random topics</p>
+                </div>
+                <div class="mode-item" onclick="startMode('theme')">
+                    <div class="mode-icon">💬</div>
+                    <h3>Theme Chat</h3>
+                    <p>Chat with Sarah on various topics</p>
+                </div>
+                <div class="mode-item" onclick="startMode('scenario')">
+                    <div class="mode-icon">🎭</div>
+                    <h3>Scenarios</h3>
+                    <p>Workplace & real-life situations</p>
+                </div>
+                <div class="mode-item" onclick="startMode('daily')">
+                    <div class="mode-icon">📅</div>
+                    <h3>Daily Test</h3>
+                    <p>Personalized 10-min exercise</p>
+                </div>
+            </div>
+            
+            <div class="section-title">Popular Topics</div>
+            <div class="topics-scroll">
+                <div class="topic-pill active" onclick="selectTopic(this, 'family')">Family</div>
+                <div class="topic-pill" onclick="selectTopic(this, 'hobbies')">Hobbies</div>
+                <div class="topic-pill" onclick="selectTopic(this, 'technology')">Technology</div>
+                <div class="topic-pill" onclick="selectTopic(this, 'travel')">Travel</div>
+                <div class="topic-pill" onclick="selectTopic(this, 'food')">Food</div>
+                <div class="topic-pill" onclick="selectTopic(this, 'movies')">Movies</div>
+                <div class="topic-pill" onclick="selectTopic(this, 'work')">Work</div>
+                <div class="topic-pill" onclick="selectTopic(this, 'future')">Future</div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="value" id="stat-practices">0</div>
+                    <div class="label">Practices</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="stat-avg">0</div>
+                    <div class="label">Avg Score</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="stat-streak">0</div>
+                    <div class="label">Streak</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="stat-minutes">0</div>
+                    <div class="label">Minutes</div>
+                </div>
+            </div>
+            
+            <button class="btn-secondary" onclick="showScreen('progress-screen')" style="margin-top: 16px;">
+                View My Progress
+            </button>
         </div>
-        
-        <div class="sarah-container">
-            <div class="sarah-avatar">👩‍🏫</div>
-            <div class="sarah-info">
-                <div class="sarah-name">Sarah</div>
-                <div class="sarah-status">Online - Ready to practice</div>
-            </div>
-        </div>
-        
-        <div class="stats-row">
-            <div class="stat-card">
-                <div class="number" id="total-practices">0</div>
-                <div class="label">Practices</div>
-            </div>
-            <div class="stat-card">
-                <div class="number" id="avg-score">0</div>
-                <div class="label">Avg Score</div>
-            </div>
-            <div class="stat-card">
-                <div class="number" id="current-streak">0</div>
-                <div class="label">Day Streak</div>
-            </div>
-            <div class="stat-card">
-                <div class="number" id="minutes-practiced">0</div>
-                <div class="label">Minutes</div>
-            </div>
-        </div>
-        
-        <div class="mode-grid">
-            <div class="mode-card" onclick="startMode('impromptu')">
-                <div class="icon">⚡</div>
-                <h3>Impromptu</h3>
-                <p>60-second challenges on random topics</p>
-            </div>
-            <div class="mode-card" onclick="startMode('theme')">
-                <div class="icon">💬</div>
-                <h3>Theme Chat</h3>
-                <p>Chat with Sarah on 20+ topics</p>
-            </div>
-            <div class="mode-card" onclick="startMode('scenario')">
-                <div class="icon">🎭</div>
-                <h3>Scenarios</h3>
-                <p>Workplace & real-life situations</p>
-            </div>
-            <div class="mode-card" onclick="startMode('daily')">
-                <div class="icon">📅</div>
-                <h3>Daily Test</h3>
-                <p>Personalized 10-min exercise</p>
-            </div>
-        </div>
-        
-        <div class="section-header">
-            <h2>Popular Topics</h2>
-            <span class="see-all" onclick="showAllTopics()">See all</span>
-        </div>
-        <div class="topic-chips" id="topic-chips">
-            <div class="topic-chip active" onclick="selectTopic('family')">Family</div>
-            <div class="topic-chip" onclick="selectTopic('hobbies')">Hobbies</div>
-            <div class="topic-chip" onclick="selectTopic('technology')">Technology</div>
-            <div class="topic-chip" onclick="selectTopic('travel')">Travel</div>
-            <div class="topic-chip" onclick="selectTopic('food')">Food</div>
-            <div class="topic-chip" onclick="selectTopic('movies')">Movies</div>
-        </div>
-        
-        <button class="btn-primary" onclick="quickStart()">Quick Start - 5 Min Practice</button>
-        <button class="btn-secondary" onclick="showScreen('progress-screen')">View My Progress</button>
     </div>
 
     <!-- PRACTICE SCREEN -->
     <div id="practice-screen" class="screen">
-        <div class="practice-header">
-            <button onclick="showScreen('home-screen')" class="btn-back">←</button>
-            <div>
-                <h2 id="practice-title">Impromptu Speaking</h2>
-                <p id="practice-subtitle" style="color: var(--text-muted); font-size: 14px;">Speak for 60 seconds</p>
+        <div class="practice-container">
+            <div class="nav-header">
+                <button class="nav-back" onclick="showScreen('home-screen')">←</button>
+                <div>
+                    <div class="nav-title" id="practice-title">Impromptu Speaking</div>
+                    <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;" id="practice-subtitle">Speak for 60 seconds</div>
+                </div>
+            </div>
+            
+            <div class="timer-section" id="timer-section">
+                <div class="timer-display">
+                    <div class="timer-circle" id="timer-circle">
+                        <div class="timer-text" id="timer-text">60</div>
+                    </div>
+                </div>
+                <div class="timer-label">seconds remaining</div>
+            </div>
+            
+            <div class="topic-card">
+                <h2 id="topic-name">Technology</h2>
+                <p id="topic-prompt">How has technology changed the way we communicate?</p>
+            </div>
+            
+            <div class="tip-card">
+                <div class="tip-icon">💡</div>
+                <div class="tip-content">
+                    <h4>Sarah's Tip</h4>
+                    <p id="sarah-tip">Start with a personal example, then explain your opinion. Use words like "however" and "furthermore" to connect ideas.</p>
+                </div>
+            </div>
+            
+            <div class="recording-area">
+                <button class="mic-button" id="mic-button" onclick="toggleRecording()">
+                    <div class="mic-ring"></div>
+                    <span id="mic-icon">🎤</span>
+                </button>
+                <div class="recording-status">
+                    <div class="status-text" id="recording-status">Tap to start speaking</div>
+                    <div class="status-sub" id="recording-sub">Speak clearly for best results</div>
+                </div>
+            </div>
+            
+            <div class="transcript-card" id="transcript-card">
+                <div class="transcript-header">
+                    <span>📝</span>
+                    <span>Your Speech</span>
+                </div>
+                <div class="transcript-text" id="transcript-text"></div>
             </div>
         </div>
-        
-        <div class="timer-bar" id="timer-bar" style="display:none;">
-            <div class="timer-fill" id="timer-fill"></div>
-        </div>
-        
-        <div class="topic-display" id="topic-display">
-            <h2 id="current-topic">Technology</h2>
-            <p id="topic-prompt">How has technology changed the way we communicate?</p>
-        </div>
-        
-        <div class="prompt-box" id="prompt-box">
-            <h4>💡 Sarah's Tip</h4>
-            <p id="sarah-tip">Start with a personal example, then explain your opinion. Use words like "however" and "furthermore" to connect ideas.</p>
-        </div>
-        
-        <div class="sample-answer" id="sample-answer">
-            <h4>📝 Sample Answer</h4>
-            <p id="sample-text">"Technology has completely transformed communication. For example, I now video call my family across the world instantly. However, I believe we lose the personal touch of face-to-face conversations..."</p>
-        </div>
-        
-        <div class="recording-container" id="recording-container">
-            <button class="record-btn" id="record-btn" onclick="toggleRecording()">🎤</button>
-            <div class="recording-time" id="recording-time">60</div>
-            <div class="recording-status" id="recording-status">Tap to start speaking</div>
-        </div>
-        
-        <div class="transcript-box" id="transcript-box" style="display:none;">
-            <div class="label">Your Speech</div>
-            <div class="text" id="user-transcript"></div>
-        </div>
-        
-        <button class="btn-secondary" id="sample-btn" onclick="toggleSample()" style="margin-top: 16px;">Show Sample Answer</button>
     </div>
 
     <!-- FEEDBACK SCREEN -->
     <div id="feedback-screen" class="screen">
-        <div class="practice-header">
-            <button onclick="showScreen('home-screen')" class="btn-back">←</button>
-            <h2>Your Results</h2>
+        <div class="feedback-container">
+            <div class="nav-header">
+                <button class="nav-back" onclick="showScreen('home-screen')">←</button>
+                <div class="nav-title">Your Results</div>
+            </div>
+            
+            <div class="score-hero">
+                <div class="score-circle-big" id="score-circle" style="--score-deg: 270deg;">
+                    <div class="score-inner">
+                        <div class="score-number" id="main-score">75</div>
+                        <div class="score-total">/100</div>
+                    </div>
+                </div>
+                <div class="score-label">Overall Speaking Score</div>
+                <div class="band-badge" id="band-badge">IELTS Band: 6.5</div>
+            </div>
+            
+            <div class="dimensions-list" id="dimensions-list">
+                <div class="dim-row">
+                    <div class="dim-icon-box">🗣️</div>
+                    <div class="dim-info">
+                        <div class="dim-name">Pronunciation</div>
+                        <div class="dim-bar-bg">
+                            <div class="dim-bar-fill" style="width: 78%; background: linear-gradient(90deg, #7c3aed, #a78bfa);"></div>
+                        </div>
+                    </div>
+                    <div class="dim-score-val" id="dim-pronunciation">78</div>
+                </div>
+                <div class="dim-row">
+                    <div class="dim-icon-box">⚡</div>
+                    <div class="dim-info">
+                        <div class="dim-name">Fluency</div>
+                        <div class="dim-bar-bg">
+                            <div class="dim-bar-fill" style="width: 72%; background: linear-gradient(90deg, #7c3aed, #a78bfa);"></div>
+                        </div>
+                    </div>
+                    <div class="dim-score-val" id="dim-fluency">72</div>
+                </div>
+                <div class="dim-row">
+                    <div class="dim-icon-box">📝</div>
+                    <div class="dim-info">
+                        <div class="dim-name">Grammar</div>
+                        <div class="dim-bar-bg">
+                            <div class="dim-bar-fill" style="width: 80%; background: linear-gradient(90deg, #7c3aed, #a78bfa);"></div>
+                        </div>
+                    </div>
+                    <div class="dim-score-val" id="dim-grammar">80</div>
+                </div>
+                <div class="dim-row">
+                    <div class="dim-icon-box">📚</div>
+                    <div class="dim-info">
+                        <div class="dim-name">Vocabulary</div>
+                        <div class="dim-bar-bg">
+                            <div class="dim-bar-fill" style="width: 76%; background: linear-gradient(90deg, #7c3aed, #a78bfa);"></div>
+                        </div>
+                    </div>
+                    <div class="dim-score-val" id="dim-vocabulary">76</div>
+                </div>
+                <div class="dim-row">
+                    <div class="dim-icon-box">🎯</div>
+                    <div class="dim-info">
+                        <div class="dim-name">No Fillers</div>
+                        <div class="dim-bar-bg">
+                            <div class="dim-bar-fill" style="width: 85%; background: linear-gradient(90deg, #7c3aed, #a78bfa);"></div>
+                        </div>
+                    </div>
+                    <div class="dim-score-val" id="dim-fillers">85</div>
+                </div>
+                <div class="dim-row">
+                    <div class="dim-icon-box">⏱️</div>
+                    <div class="dim-info">
+                        <div class="dim-name">Speaking Pace</div>
+                        <div class="dim-bar-bg">
+                            <div class="dim-bar-fill" style="width: 70%; background: linear-gradient(90deg, #7c3aed, #a78bfa);"></div>
+                        </div>
+                    </div>
+                    <div class="dim-score-val" id="dim-pace">70</div>
+                </div>
+            </div>
+            
+            <div class="issues-section" id="issues-section">
+                <h3>🎯 Areas to Improve</h3>
+                <div id="issues-list"></div>
+            </div>
+            
+            <div class="sarah-tip-box">
+                <div class="sarah-tip-avatar">👩‍🏫</div>
+                <div class="sarah-tip-content">
+                    <h4>Sarah's Personalized Tip</h4>
+                    <p id="personalized-tip">You used "um" 4 times. Try pausing silently instead - it sounds more confident!</p>
+                </div>
+            </div>
+            
+            <button class="btn-main" onclick="practiceAgain()">Practice Again</button>
+            <button class="btn-secondary" onclick="showScreen('home-screen')">Back to Home</button>
         </div>
-        
-        <div class="score-display">
-            <div class="main-score" id="main-score">75</div>
-            <div class="score-label">Overall Speaking Score</div>
-            <div class="band-score" id="band-score">IELTS Band: 6.5</div>
-        </div>
-        
-        <div class="dimensions-grid">
-            <div class="dimension-card">
-                <div class="dim-icon">🗣️</div>
-                <div class="dim-score" id="pronunciation-score">78</div>
-                <div class="dim-name">Pronunciation</div>
-            </div>
-            <div class="dimension-card">
-                <div class="dim-icon">⚡</div>
-                <div class="dim-score" id="fluency-score">72</div>
-                <div class="dim-name">Fluency</div>
-            </div>
-            <div class="dimension-card">
-                <div class="dim-icon">📝</div>
-                <div class="dim-score" id="grammar-score">80</div>
-                <div class="dim-name">Grammar</div>
-            </div>
-            <div class="dimension-card">
-                <div class="dim-icon">📚</div>
-                <div class="dim-score" id="vocab-score">76</div>
-                <div class="dim-name">Vocabulary</div>
-            </div>
-            <div class="dimension-card">
-                <div class="dim-icon">🎯</div>
-                <div class="dim-score" id="filler-score">85</div>
-                <div class="dim-name">No Fillers</div>
-            </div>
-            <div class="dimension-card">
-                <div class="dim-icon">⏱️</div>
-                <div class="dim-score" id="pace-score">70</div>
-                <div class="dim-name">Pace</div>
-            </div>
-        </div>
-        
-        <div class="feedback-details" id="feedback-details">
-            <h3>🎯 Areas to Improve</h3>
-            <div id="issues-list"></div>
-        </div>
-        
-        <div class="tip-card" id="personalized-tip">
-            <h4>💡 Sarah's Personalized Tip</h4>
-            <p id="tip-text">You used "um" 4 times. Try pausing silently instead - it sounds more confident!</p>
-        </div>
-        
-        <button class="btn-primary" onclick="practiceAgain()">Practice This Topic Again</button>
-        <button class="btn-secondary" onclick="showScreen('home-screen')">Back to Home</button>
     </div>
 
     <!-- PROGRESS SCREEN -->
     <div id="progress-screen" class="screen">
-        <div class="practice-header">
-            <button onclick="showScreen('home-screen')" class="btn-back">←</button>
-            <h2>Your Progress</h2>
+        <div class="feedback-container">
+            <div class="nav-header">
+                <button class="nav-back" onclick="showScreen('home-screen')">←</button>
+                <div class="nav-title">Your Progress</div>
+            </div>
+            
+            <div class="chart-container">
+                <h3>Last 7 Days</h3>
+                <div class="chart-bars" id="chart-bars">
+                    <div class="chart-col">
+                        <div class="chart-bar" style="height: 60px;" data-score="45"></div>
+                        <div class="chart-day">M</div>
+                    </div>
+                    <div class="chart-col">
+                        <div class="chart-bar" style="height: 80px;" data-score="60"></div>
+                        <div class="chart-day">T</div>
+                    </div>
+                    <div class="chart-col">
+                        <div class="chart-bar" style="height: 100px;" data-score="75"></div>
+                        <div class="chart-day">W</div>
+                    </div>
+                    <div class="chart-col">
+                        <div class="chart-bar" style="height: 90px;" data-score="68"></div>
+                        <div class="chart-day">T</div>
+                    </div>
+                    <div class="chart-col">
+                        <div class="chart-bar" style="height: 120px;" data-score="85"></div>
+                        <div class="chart-day">F</div>
+                    </div>
+                    <div class="chart-col">
+                        <div class="chart-bar" style="height: 40px;" data-score="30"></div>
+                        <div class="chart-day">S</div>
+                    </div>
+                    <div class="chart-col">
+                        <div class="chart-bar" style="height: 110px;" data-score="78"></div>
+                        <div class="chart-day">S</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="issues-section">
+                <h3>💪 Your Speaking Profile</h3>
+                <div id="profile-list"></div>
+            </div>
+            
+            <button class="btn-main" onclick="showScreen('home-screen')">Continue Practicing</button>
         </div>
-        
-        <div class="progress-chart">
-            <h3>Last 7 Days</h3>
-            <div class="chart-bar" id="chart-bar"></div>
-        </div>
-        
-        <div class="weakness-list">
-            <h3>Your Speaking Profile</h3>
-            <div id="weakness-items"></div>
-        </div>
-        
-        <button class="btn-primary" onclick="showScreen('home-screen')">Continue Practicing</button>
     </div>
 
     <script>
@@ -332,7 +1310,7 @@
         // CONFIG
         // ==========================================
         const CONFIG = {
-            GROQ_API_KEY: 'gsk_aBc123XyZ789YourActualKeyHere', // REPLACE WITH YOUR KEY
+            GROQ_API_KEY: 'gsk_aBc123XyZ789YourActualKeyHere',
             GROQ_URL: 'https://api.groq.com/openai/v1/chat/completions',
             MODEL: 'llama-3.1-8b-instant'
         };
@@ -341,24 +1319,14 @@
         // DATA
         // ==========================================
         const TOPICS = {
-            family: { title: 'Family', prompt: 'Describe your family. Who are you closest to and why?', tip: 'Use specific examples. Instead of "my family is nice", say "my mother always cooks my favorite food when I visit".', sample: "I come from a close-knit family of four. I'm closest to my younger sister because we grew up sharing everything. She always supports my decisions, even when they seem risky to others." },
-            hobbies: { title: 'Hobbies', prompt: 'What do you enjoy doing in your free time? How did you start this hobby?', tip: 'Show passion! Use words like "absolutely love", "can't get enough of", "addicted to" (positive context).', sample: "I'm absolutely passionate about photography. I started three years ago when my friend lent me his camera. Now I can't stop capturing moments - from street scenes to sunsets." },
-            technology: { title: 'Technology', prompt: 'How has technology changed your daily life? Is it all positive?', tip: 'Give a balanced view. Use "on the one hand... on the other hand" structure.', sample: "Technology has revolutionized how I work and connect. On the one hand, I can work from anywhere. On the other hand, I sometimes feel overwhelmed by constant notifications." },
-            travel: { title: 'Travel', prompt: 'Describe your most memorable trip. What made it special?', tip: 'Use sensory details - what you saw, heard, tasted. Make the listener feel like they were there.', sample: "My trip to Japan last year was unforgettable. The cherry blossoms in Kyoto were breathtaking, and the street food in Osaka - especially the takoyaki - was the best I've ever tasted." },
-            food: { title: 'Food', prompt: 'What is your favorite cuisine? Describe a dish you love.', tip: 'Describe flavors, textures, and smells. Use words like "mouth-watering", "crispy", "creamy", "spicy".', sample: "I absolutely adore Indian cuisine. My favorite dish is butter chicken - the creamy tomato sauce with tender chicken pieces is simply mouth-watering. I love how the spices dance on your tongue." },
-            movies: { title: 'Movies', prompt: 'What kind of movies do you enjoy? Recommend one to me.', tip: 'Give reasons, not just names. Use "because" to explain why you like something.', sample: "I'm a huge fan of sci-fi movies. I highly recommend 'Interstellar' because it combines stunning visuals with a deeply emotional story about love transcending time and space." },
-            work: { title: 'Work', prompt: 'Describe your ideal work environment. What motivates you?', tip: 'Connect personal values to professional goals. Use "I believe", "I value", "I'm passionate about".', sample: "I thrive in collaborative environments where creativity is encouraged. I'm passionate about solving problems that help people. What motivates me most is seeing the real impact of my work." },
-            education: { title: 'Education', prompt: 'What subject did you enjoy most in school? Why?', tip: 'Connect past learning to present skills. Show how it shaped you.', sample: "I loved mathematics because it taught me logical thinking. This skill helps me every day in my work - breaking complex problems into smaller, manageable parts." },
-            health: { title: 'Health', prompt: 'How do you stay healthy? What advice would you give?', tip: 'Be honest and realistic. Don't claim perfection - share struggles too.', sample: "I try to stay active by walking 30 minutes daily and eating home-cooked meals. Honestly, I struggle with avoiding sweets, but I'm working on moderation rather than elimination." },
-            future: { title: 'Future Plans', prompt: 'Where do you see yourself in 5 years?', tip: 'Be ambitious but realistic. Use "I hope to", "I plan to", "My goal is".', sample: "In five years, I hope to lead a small team in my company. My goal is to combine technical expertise with mentorship, helping junior developers grow while delivering great products." }
-        };
-
-        const SCENARIOS = {
-            standup: { title: 'Daily Standup', prompt: 'Give a 30-second standup update. What did you do yesterday, what are you doing today, any blockers?', tip: 'Use past tense for yesterday, present continuous for today. Be concise!' },
-            meeting: { title: 'Team Meeting', prompt: 'Express your opinion on a proposal. Agree or disagree politely.', tip: "Start with 'I see your point' before disagreeing. Use 'However' not 'But'." },
-            client: { title: 'Client Call', prompt: 'Explain a project delay to a client. Be professional and solution-oriented.', tip: "Use 'I wanted to update you' (softener). Always end with a solution and timeline." },
-            interview: { title: 'Job Interview', prompt: 'Tell me about yourself and why you want this role.', tip: 'Use numbers and achievements. Connect your experience to their needs.' },
-            email: { title: 'Voice Message', prompt: 'Record a voice message explaining a complex issue to your team.', tip: 'Structure: Problem → Impact → Solution → Timeline. Speak clearly.' }
+            family: { title: 'Family', prompt: 'Describe your family. Who are you closest to and why?', tip: 'Use specific examples. Instead of "my family is nice", say "my mother always cooks my favorite food when I visit".' },
+            hobbies: { title: 'Hobbies', prompt: 'What do you enjoy doing in your free time? How did you start this hobby?', tip: 'Show passion! Use words like "absolutely love", "can\'t get enough of".' },
+            technology: { title: 'Technology', prompt: 'How has technology changed your daily life? Is it all positive?', tip: 'Give a balanced view. Use "on the one hand... on the other hand" structure.' },
+            travel: { title: 'Travel', prompt: 'Describe your most memorable trip. What made it special?', tip: 'Use sensory details - what you saw, heard, tasted. Make the listener feel like they were there.' },
+            food: { title: 'Food', prompt: 'What is your favorite cuisine? Describe a dish you love.', tip: 'Describe flavors, textures, and smells. Use words like "mouth-watering", "crispy", "creamy".' },
+            movies: { title: 'Movies', prompt: 'What kind of movies do you enjoy? Recommend one to me.', tip: 'Give reasons, not just names. Use "because" to explain why you like something.' },
+            work: { title: 'Work', prompt: 'Describe your ideal work environment. What motivates you?', tip: 'Connect personal values to professional goals. Use "I believe", "I value", "I\'m passionate about".' },
+            future: { title: 'Future Plans', prompt: 'Where do you see yourself in 5 years?', tip: 'Be ambitious but realistic. Use "I hope to", "I plan to", "My goal is".' }
         };
 
         let currentMode = '';
@@ -368,15 +1336,21 @@
         let timeLeft = 60;
         let recognition = null;
         let userTranscript = '';
-        let sessionHistory = JSON.parse(localStorage.getItem('fluency_history') || '[]');
 
         // ==========================================
         // INIT
         // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
-            updateHomeStats();
-            renderChart();
-            renderWeaknesses();
+            const savedKey = localStorage.getItem('groq_api_key');
+            if (savedKey && savedKey.startsWith('gsk_')) {
+                CONFIG.GROQ_API_KEY = savedKey;
+                showScreen('home-screen');
+                updateStats();
+            } else if (CONFIG.GROQ_API_KEY !== 'YOUR_GROQ_KEY_HERE' && CONFIG.GROQ_API_KEY.startsWith('gsk_')) {
+                localStorage.setItem('groq_api_key', CONFIG.GROQ_API_KEY);
+                showScreen('home-screen');
+                updateStats();
+            }
         });
 
         function showScreen(id) {
@@ -384,24 +1358,35 @@
             document.getElementById(id).classList.add('active');
         }
 
+        function saveApiKey() {
+            const key = document.getElementById('api-key-input').value.trim();
+            if (!key || !key.startsWith('gsk_')) {
+                alert('Please enter a valid Groq API key starting with "gsk_"');
+                return;
+            }
+            CONFIG.GROQ_API_KEY = key;
+            localStorage.setItem('groq_api_key', key);
+            showScreen('home-screen');
+            updateStats();
+        }
+
         // ==========================================
-        // HOME SCREEN
+        // HOME
         // ==========================================
-        function updateHomeStats() {
+        function updateStats() {
             const history = JSON.parse(localStorage.getItem('fluency_history') || '[]');
-            document.getElementById('total-practices').textContent = history.length;
+            document.getElementById('stat-practices').textContent = history.length;
             
             const avg = history.length > 0 
                 ? Math.round(history.reduce((a, h) => a + h.overall, 0) / history.length) 
                 : 0;
-            document.getElementById('avg-score').textContent = avg;
+            document.getElementById('stat-avg').textContent = avg;
             
             const minutes = Math.round(history.length * 2.5);
-            document.getElementById('minutes-practiced').textContent = minutes;
+            document.getElementById('stat-minutes').textContent = minutes;
             
-            // Calculate streak
-            const streak = calculateStreak(history);
-            document.getElementById('current-streak').textContent = streak;
+            document.getElementById('streak-count').textContent = calculateStreak(history);
+            document.getElementById('stat-streak').textContent = calculateStreak(history);
         }
 
         function calculateStreak(history) {
@@ -425,22 +1410,9 @@
             return streak;
         }
 
-        function selectTopic(topic) {
-            document.querySelectorAll('.topic-chip').forEach(c => c.classList.remove('active'));
-            event.target.classList.add('active');
-        }
-
-        function showAllTopics() {
-            const chips = document.getElementById('topic-chips');
-            const moreTopics = ['work', 'education', 'health', 'future'];
-            moreTopics.forEach(t => {
-                const div = document.createElement('div');
-                div.className = 'topic-chip';
-                div.textContent = TOPICS[t].title;
-                div.onclick = () => selectTopic(t);
-                chips.appendChild(div);
-            });
-            event.target.style.display = 'none';
+        function selectTopic(el, topic) {
+            document.querySelectorAll('.topic-pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
         }
 
         function quickStart() {
@@ -448,58 +1420,37 @@
         }
 
         // ==========================================
-        // PRACTICE MODES
+        // PRACTICE
         // ==========================================
         function startMode(mode) {
             currentMode = mode;
             showScreen('practice-screen');
             
-            const topicKeys = Object.keys(TOPICS);
-            const randomTopic = topicKeys[Math.floor(Math.random() * topicKeys.length)];
-            currentTopic = randomTopic;
-            
-            const topic = TOPICS[randomTopic];
+            const keys = Object.keys(TOPICS);
+            currentTopic = keys[Math.floor(Math.random() * keys.length)];
+            const topic = TOPICS[currentTopic];
             
             document.getElementById('practice-title').textContent = mode === 'impromptu' ? 'Impromptu Speaking' : 'Theme Chat';
             document.getElementById('practice-subtitle').textContent = mode === 'impromptu' ? 'Speak for 60 seconds' : 'Have a conversation with Sarah';
-            document.getElementById('current-topic').textContent = topic.title;
+            document.getElementById('topic-name').textContent = topic.title;
             document.getElementById('topic-prompt').textContent = topic.prompt;
             document.getElementById('sarah-tip').textContent = topic.tip;
-            document.getElementById('sample-text').textContent = '"' + topic.sample + '"';
             
-            // Reset UI
-            document.getElementById('timer-bar').style.display = mode === 'impromptu' ? 'block' : 'none';
-            document.getElementById('recording-time').textContent = '60';
-            document.getElementById('recording-status').textContent = 'Tap to start speaking';
-            document.getElementById('record-btn').textContent = '🎤';
-            document.getElementById('transcript-box').style.display = 'none';
-            document.getElementById('sample-answer').classList.remove('show');
-            document.getElementById('sample-btn').textContent = 'Show Sample Answer';
-            userTranscript = '';
+            // Reset
             timeLeft = 60;
+            document.getElementById('timer-text').textContent = '60';
+            document.getElementById('timer-circle').style.background = 'conic-gradient(#7c3aed 360deg, #141414 0deg)';
+            document.getElementById('mic-button').classList.remove('recording');
+            document.getElementById('mic-icon').textContent = '🎤';
+            document.getElementById('recording-status').textContent = 'Tap to start speaking';
+            document.getElementById('recording-sub').textContent = 'Speak clearly for best results';
+            document.getElementById('transcript-card').classList.remove('show');
+            userTranscript = '';
         }
 
-        function toggleSample() {
-            const sample = document.getElementById('sample-answer');
-            const btn = document.getElementById('sample-btn');
-            if (sample.classList.contains('show')) {
-                sample.classList.remove('show');
-                btn.textContent = 'Show Sample Answer';
-            } else {
-                sample.classList.add('show');
-                btn.textContent = 'Hide Sample Answer';
-            }
-        }
-
-        // ==========================================
-        // RECORDING
-        // ==========================================
         function toggleRecording() {
-            if (isRecording) {
-                stopRecording();
-            } else {
-                startRecording();
-            }
+            if (isRecording) stopRecording();
+            else startRecording();
         }
 
         function startRecording() {
@@ -517,40 +1468,37 @@
                 recognition.onresult = (event) => {
                     const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
                     userTranscript = transcript;
-                    document.getElementById('user-transcript').textContent = transcript;
+                    document.getElementById('transcript-text').textContent = transcript;
                 };
                 
                 recognition.onerror = (e) => {
                     if (e.error === 'no-speech') {
-                        document.getElementById('recording-status').textContent = 'No speech detected. Try again.';
+                        document.getElementById('recording-status').textContent = 'No speech detected';
+                        document.getElementById('recording-sub').textContent = 'Try speaking louder or closer to the mic';
                     }
                 };
             }
             
             isRecording = true;
             userTranscript = '';
-            document.getElementById('user-transcript').textContent = '';
-            document.getElementById('transcript-box').style.display = 'block';
-            document.getElementById('record-btn').classList.add('recording');
-            document.getElementById('record-btn').textContent = '⏹';
-            document.getElementById('recording-status').textContent = 'Recording... Speak now!';
+            document.getElementById('transcript-text').textContent = '';
+            document.getElementById('transcript-card').classList.add('show');
+            document.getElementById('mic-button').classList.add('recording');
+            document.getElementById('mic-icon').textContent = '⏹';
+            document.getElementById('recording-status').textContent = 'Recording...';
+            document.getElementById('recording-sub').textContent = 'Speak now! Tap again to stop';
             
             try { recognition.start(); } catch(e) { recognition.stop(); setTimeout(() => recognition.start(), 200); }
             
-            // Timer for impromptu mode
             if (currentMode === 'impromptu') {
                 timeLeft = 60;
-                const timerFill = document.getElementById('timer-fill');
-                timerFill.style.width = '100%';
-                
                 recordingTimer = setInterval(() => {
                     timeLeft--;
-                    document.getElementById('recording-time').textContent = timeLeft;
-                    timerFill.style.width = (timeLeft / 60 * 100) + '%';
+                    document.getElementById('timer-text').textContent = timeLeft;
+                    const deg = (timeLeft / 60) * 360;
+                    document.getElementById('timer-circle').style.background = `conic-gradient(#7c3aed ${deg}deg, #141414 ${deg}deg)`;
                     
-                    if (timeLeft <= 0) {
-                        stopRecording();
-                    }
+                    if (timeLeft <= 0) stopRecording();
                 }, 1000);
             }
         }
@@ -558,15 +1506,14 @@
         function stopRecording() {
             isRecording = false;
             clearInterval(recordingTimer);
-            
             if (recognition) recognition.stop();
             
-            document.getElementById('record-btn').classList.remove('recording');
-            document.getElementById('record-btn').textContent = '🎤';
-            document.getElementById('recording-status').textContent = 'Processing your speech...';
+            document.getElementById('mic-button').classList.remove('recording');
+            document.getElementById('mic-icon').textContent = '🎤';
+            document.getElementById('recording-status').textContent = 'Processing...';
+            document.getElementById('recording-sub').textContent = 'Sarah is analyzing your speech';
             
-            // Analyze and show feedback
-            setTimeout(() => analyzeSpeech(), 500);
+            setTimeout(() => analyzeSpeech(), 800);
         }
 
         // ==========================================
@@ -575,9 +1522,7 @@
         async function analyzeSpeech() {
             const text = userTranscript || "No speech detected. Please try again and speak clearly.";
             
-            document.getElementById('recording-status').textContent = 'Getting feedback from Sarah...';
-            
-            const prompt = `Analyze this spoken English response. The topic was: "${TOPICS[currentTopic].prompt}"
+            const prompt = `Analyze this spoken English response. Topic: "${TOPICS[currentTopic].prompt}"
 
 Learner said: "${text}"
 
@@ -592,7 +1537,7 @@ Return ONLY valid JSON:
   "pace": 0-100,
   "ielts_band": "6.5",
   "issues": [{"type": "grammar|vocab|pronunciation|filler", "wrong": "text", "right": "correction", "tip": "explanation"}],
-  "personalized_tip": "one specific tip for this learner",
+  "personalized_tip": "one specific tip",
   "filler_count": number,
   "filler_words": ["um", "uh"]
 }
@@ -617,25 +1562,16 @@ Score strictly. Count actual filler words in the text.`;
                 
                 const data = await res.json();
                 const feedback = JSON.parse(data.choices[0].message.content);
-                
                 showFeedback(feedback);
                 
             } catch (err) {
                 console.error(err);
-                // Fallback feedback
                 showFeedback({
-                    overall: 50,
-                    pronunciation: 50,
-                    fluency: 50,
-                    grammar: 50,
-                    vocabulary: 50,
-                    fillers: 50,
-                    pace: 50,
-                    ielts_band: "5.0",
-                    issues: [{type: "general", wrong: "Connection issue", right: "Please try again", tip: "The AI had trouble connecting. Check your API key."}],
+                    overall: 50, pronunciation: 50, fluency: 50, grammar: 50,
+                    vocabulary: 50, fillers: 50, pace: 50, ielts_band: "5.0",
+                    issues: [{type: "general", wrong: "Connection issue", right: "Please try again", tip: "Check your API key and try again."}],
                     personalized_tip: "Try speaking more clearly and try again.",
-                    filler_count: 0,
-                    filler_words: []
+                    filler_count: 0, filler_words: []
                 });
             }
         }
@@ -643,40 +1579,48 @@ Score strictly. Count actual filler words in the text.`;
         function showFeedback(feedback) {
             showScreen('feedback-screen');
             
-            // Update scores
-            document.getElementById('main-score').textContent = feedback.overall;
-            document.getElementById('pronunciation-score').textContent = feedback.pronunciation;
-            document.getElementById('fluency-score').textContent = feedback.fluency;
-            document.getElementById('grammar-score').textContent = feedback.grammar;
-            document.getElementById('vocab-score').textContent = feedback.vocabulary;
-            document.getElementById('filler-score').textContent = feedback.fillers;
-            document.getElementById('pace-score').textContent = feedback.pace;
-            document.getElementById('band-score').textContent = 'IELTS Band: ' + feedback.ielts_band;
+            // Update main score with animation
+            const score = feedback.overall;
+            document.getElementById('main-score').textContent = score;
+            const deg = (score / 100) * 360;
+            document.getElementById('score-circle').style.setProperty('--score-deg', deg + 'deg');
+            document.getElementById('score-circle').style.background = `conic-gradient(#7c3aed ${deg}deg, #141414 ${deg}deg)`;
             
-            // Issues list
-            const issuesList = document.getElementById('issues-list');
-            issuesList.innerHTML = '';
-            feedback.issues.forEach(issue => {
-                const div = document.createElement('div');
-                div.className = 'issue-item';
-                div.innerHTML = `
-                    <div class="issue-icon">${issue.type === 'grammar' ? '📝' : issue.type === 'vocab' ? '📚' : issue.type === 'pronunciation' ? '🗣️' : issue.type === 'filler' ? '🎯' : '💡'}</div>
-                    <div class="issue-text">
-                        <span class="wrong">${issue.wrong}</span> → <span class="right">${issue.right}</span><br>
-                        <small>${issue.tip}</small>
-                    </div>
-                `;
-                issuesList.appendChild(div);
+            document.getElementById('band-badge').textContent = 'IELTS Band: ' + feedback.ielts_band;
+            
+            // Update dimensions
+            const dims = ['pronunciation', 'fluency', 'grammar', 'vocabulary', 'fillers', 'pace'];
+            dims.forEach(dim => {
+                const val = feedback[dim] || 50;
+                const el = document.getElementById('dim-' + dim);
+                if (el) {
+                    el.textContent = val;
+                    const bar = el.parentElement.querySelector('.dim-bar-fill');
+                    if (bar) bar.style.width = val + '%';
+                }
             });
             
-            // Personalized tip
-            document.getElementById('tip-text').textContent = feedback.personalized_tip;
+            // Issues
+            const issuesList = document.getElementById('issues-list');
+            issuesList.innerHTML = '';
+            if (feedback.issues && feedback.issues.length > 0) {
+                feedback.issues.forEach(issue => {
+                    const div = document.createElement('div');
+                    div.className = 'issue-item';
+                    div.innerHTML = `
+                        <div class="issue-bad">${issue.wrong}</div>
+                        <div class="issue-good">✓ ${issue.right}</div>
+                        <div class="issue-why">${issue.tip}</div>
+                    `;
+                    issuesList.appendChild(div);
+                });
+            } else {
+                issuesList.innerHTML = '<div class="issue-item"><div class="issue-good">✓ Great job! No major issues detected.</div></div>';
+            }
             
-            // Save to history
-            saveSession(feedback);
-        }
-
-        function saveSession(feedback) {
+            document.getElementById('personalized-tip').textContent = feedback.personalized_tip;
+            
+            // Save
             const history = JSON.parse(localStorage.getItem('fluency_history') || '[]');
             history.push({
                 date: new Date().toISOString(),
@@ -691,82 +1635,11 @@ Score strictly. Count actual filler words in the text.`;
                 pace: feedback.pace
             });
             localStorage.setItem('fluency_history', JSON.stringify(history.slice(-100)));
-            updateHomeStats();
+            updateStats();
         }
 
         function practiceAgain() {
             startMode(currentMode);
-        }
-
-        // ==========================================
-        // PROGRESS SCREEN
-        // ==========================================
-        function renderChart() {
-            const history = JSON.parse(localStorage.getItem('fluency_history') || '[]');
-            const last7 = history.slice(-7);
-            const chartBar = document.getElementById('chart-bar');
-            chartBar.innerHTML = '';
-            
-            last7.forEach(h => {
-                const col = document.createElement('div');
-                col.className = 'chart-column';
-                col.style.height = (h.overall / 100 * 130) + 'px';
-                col.innerHTML = `<div class="day-label">${new Date(h.date).getDate()}</div>`;
-                chartBar.appendChild(col);
-            });
-            
-            // Fill empty slots
-            for (let i = last7.length; i < 7; i++) {
-                const col = document.createElement('div');
-                col.className = 'chart-column';
-                col.style.height = '20px';
-                col.style.opacity = '0.3';
-                col.innerHTML = `<div class="day-label">-</div>`;
-                chartBar.appendChild(col);
-            }
-        }
-
-        function renderWeaknesses() {
-            const history = JSON.parse(localStorage.getItem('fluency_history') || '[]');
-            if (history.length === 0) {
-                document.getElementById('weakness-items').innerHTML = '<p style="text-align:center;color:var(--text-muted);">Practice more to see your profile!</p>';
-                return;
-            }
-            
-            const avg = {
-                pronunciation: Math.round(history.reduce((a, h) => a + h.pronunciation, 0) / history.length),
-                fluency: Math.round(history.reduce((a, h) => a + h.fluency, 0) / history.length),
-                grammar: Math.round(history.reduce((a, h) => a + h.grammar, 0) / history.length),
-                vocabulary: Math.round(history.reduce((a, h) => a + h.vocabulary, 0) / history.length),
-                fillers: Math.round(history.reduce((a, h) => a + h.fillers, 0) / history.length),
-                pace: Math.round(history.reduce((a, h) => a + h.pace, 0) / history.length)
-            };
-            
-            const items = [
-                { name: 'Pronunciation', score: avg.pronunciation },
-                { name: 'Fluency', score: avg.fluency },
-                { name: 'Grammar', score: avg.grammar },
-                { name: 'Vocabulary', score: avg.vocabulary },
-                { name: 'Filler Words', score: avg.fillers },
-                { name: 'Speaking Pace', score: avg.pace }
-            ].sort((a, b) => a.score - b.score);
-            
-            const container = document.getElementById('weakness-items');
-            container.innerHTML = '';
-            
-            items.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'weakness-item';
-                const colorClass = item.score < 60 ? 'danger' : item.score < 75 ? 'warning' : 'success';
-                div.innerHTML = `
-                    <span style="width:100px;font-size:14px;">${item.name}</span>
-                    <div class="weakness-bar">
-                        <div class="fill ${colorClass}" style="width:${item.score}%"></div>
-                    </div>
-                    <span style="width:40px;text-align:right;font-size:14px;font-weight:bold;">${item.score}</span>
-                `;
-                container.appendChild(div);
-            });
         }
     </script>
 </body>
